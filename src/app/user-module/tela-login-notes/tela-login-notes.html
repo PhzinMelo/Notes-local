@@ -1,0 +1,92 @@
+<div class="fundo">
+  <div class="form-container">
+
+    <!-- ===== Logo ===== -->
+    <div class="logo-section">
+      <div class="logo">
+
+        
+        <img src="imgs/Feather.svg" alt="Ícone Plume Notes" class="logo-icon" /> 
+
+        <span class="logo-text">Plume Notes</span>
+
+        <div class="button-container">
+          <app-theme-toggle />
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Título ===== -->
+    <h1 class="form-title">Bem-vindo ao Plume Notes</h1>
+    <p class="form-subtitle">Faça login para continuar</p>
+
+    <!-- ===== Mensagem de sucesso ===== -->
+    <div *ngIf="sucessoErrorMessage" class="success-message">
+      {{ sucessoErrorMessage }}
+    </div>
+
+    <!-- ===== Mensagem de credenciais incorretas ===== -->
+    <div *ngIf="incorretoErrorMessage" class="error-message-global">
+      {{ incorretoErrorMessage }}
+    </div>
+
+    <!-- ===== Formulário Reativo ===== -->
+    <form [formGroup]="loginForm" (ngSubmit)="onLoginClick()">
+
+      <!-- Campo de E-mail -->
+      <div class="form-group">
+        <label for="email" class="form-label">Endereço de e-mail</label>
+        <input
+          type="email"
+          id="email"
+          formControlName="email"
+          class="form-input"
+          [class.error]="emailErrorMessage !== ''"
+          placeholder="email@exemplo.com"
+        />
+        <span *ngIf="emailErrorMessage" class="error-message">{{ emailErrorMessage }}</span>
+      </div>
+
+      <!-- Campo de Senha -->
+<div class="form-group">
+  <div class="form-label-row">
+    <label for="password" class="form-label">Senha</label>
+    <a href="#" class="forgot-link">Esqueci a senha</a>
+  </div>
+
+  <div class="password-container">
+    <input
+      [type]="passwordVisible ? 'text' : 'password'"
+      id="password"
+      formControlName="password"
+      class="form-input"
+      [class.error]="passwordErrorMessage !== ''"
+    />
+
+    <!-- Mostrar/ocultar senha: faEye quando oculta, faEyeSlash quando visível -->
+    <button type="button" class="password-toggle" (click)="togglePassword()"
+            [attr.aria-label]="passwordVisible ? 'Ocultar senha' : 'Mostrar senha'"
+            [attr.aria-pressed]="passwordVisible"
+            [title]="passwordVisible ? 'Ocultar senha' : 'Mostrar senha'">
+      <fa-icon [icon]="passwordVisible ? faEyeSlash : faEye"></fa-icon>
+    </button>
+  </div>
+
+  <span *ngIf="passwordErrorMessage" class="error-message">
+    {{ passwordErrorMessage }}
+  </span>
+</div>
+      <!-- Botão de Login -->
+      <button type="submit" class="submit-button" [disabled]="isLoading">
+        {{ isLoading ? 'Entrando...' : 'Entrar' }}
+      </button>
+
+    </form>
+
+    <!-- ===== Link para cadastro ===== -->
+    <div class="signup-link">
+      Ainda não tem conta? <a (click)="goToRegister()">Cadastre-se</a>
+    </div>
+
+  </div>
+</div>

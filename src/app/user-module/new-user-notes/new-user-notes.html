@@ -1,0 +1,85 @@
+<div class="fundo">
+<div class="form-container">
+  <!-- Logo e nome da aplicação -->
+  <div class="logo-section">
+    <div class="logo">
+      <div class="logo-icon"></div>
+      <span class="logo-text">Plume Notes</span>
+      <div class="button-container">
+        <app-theme-toggle />
+      </div>
+    </div>
+  </div>
+
+  <!-- Título e subtítulo -->
+  <h1 class="form-title">Crie sua conta</h1>
+  <p class="form-subtitle">
+    Cadastre-se para organizar suas notas e aumentar sua produtividade.
+  </p>
+
+  <!-- Mensagens de sucesso/erro -->
+  <div *ngIf="sucessLogin" class="success-message">
+    {{ sucessLogin }}
+  </div>
+  <div *ngIf="errorLogin" class="error-message-global">
+    {{ errorLogin }}
+  </div>
+
+  <!-- Formulário Angular Reativo -->
+  <form [formGroup]="signupForm" (ngSubmit)="onSubmitReactive()">
+    <!-- Campo de Nome -->
+    <div class="form-group">
+      <label for="nome" class="form-label">Nome</label>
+      <input type="text" id="nome" formControlName="nome" class="form-input" [class.error]="nomeErrorMessage !== ''"
+        placeholder="João" />
+      <div *ngIf="nomeErrorMessage" class="error-message">
+        {{ nomeErrorMessage }}
+      </div>
+    </div>
+
+    <!-- Campo de Email -->
+    <div class="form-group">
+      <label for="email" class="form-label">Endereço de e-mail</label>
+      <input type="email" id="email" formControlName="email" class="form-input" [class.error]="emailErrorMessage !== ''"
+        placeholder="email@exemplo.com" />
+      <div *ngIf="emailErrorMessage" class="error-message">
+        {{ emailErrorMessage }}
+      </div>
+    </div>
+
+    <!-- Campo de Senha -->
+    <div class="form-group">
+      <label for="password" class="form-label">Senha</label>
+      <div class="password-container">
+        <input [type]="passwordVisible ? 'text' : 'password'" id="password" formControlName="password"
+          class="form-input" [class.error]="passwordErrorMessage !== ''" placeholder="Digite sua senha"
+          (input)="onPasswordInput($event)" />
+        <!-- Mostrar/ocultar senha: faEye quando oculta, faEyeSlash quando visível -->
+        <button type="button" class="password-toggle" (click)="togglePassword()"
+                [attr.aria-label]="passwordVisible ? 'Ocultar senha' : 'Mostrar senha'"
+                [attr.aria-pressed]="passwordVisible"
+                [title]="passwordVisible ? 'Ocultar senha' : 'Mostrar senha'">
+          <fa-icon [icon]="passwordVisible ? faEyeSlash : faEye"></fa-icon>
+        </button>
+      </div>
+      <div class="password-requirements">
+        <span class="requirement-icon" [class.valid]="passwordValid"></span>
+        <span>Pelo menos 6 caracteres</span>
+      </div>
+      <div *ngIf="passwordErrorMessage" class="error-message">
+        {{ passwordErrorMessage }}
+      </div>
+    </div>
+
+    <!-- Botão de Submit -->
+    <button type="submit" class="submit-button" [disabled]="isLoading">
+      <span>{{ isLoading ? 'Criando conta...' : 'Cadastrar' }}</span>
+    </button>
+  </form>
+
+  <!-- Link para login -->
+  <div class="login-link">
+    Já tem uma conta? <a routerLink="/login">Entrar</a>
+  </div>
+</div>
+</div>

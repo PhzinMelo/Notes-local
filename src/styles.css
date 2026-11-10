@@ -1,0 +1,71 @@
+/* Reset global */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TEMA DAS TELAS DE LOGIN E CADASTRO
+   Os estilos dos componentes são encapsulados pelo Angular, então um seletor como
+   "body.dark-mode .fundo" dentro deles nunca casa com o <body>. Por isso as cores
+   ficam em variáveis aqui (global): o ThemeService só liga/desliga a classe
+   "dark-mode" no <body> e os componentes usam var(--auth-*).
+   ───────────────────────────────────────────────────────────── */
+:root {
+  --auth-bg: #f3f5f8;
+  --auth-card-bg: #ffffff;
+  --auth-card-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  --auth-title: #1a1a1a;
+  --auth-text-muted: #6b7280;
+  --auth-label: #374151;
+  --auth-input-bg: #ffffff;
+  --auth-input-border: #e5e7eb;
+  --auth-input-text: #1a1a1a;
+  --auth-input-disabled-bg: #f3f4f6;
+  --auth-placeholder: #9ca3af;
+  --auth-icon: #6b7280;
+  --auth-icon-hover: #374151;
+  --auth-link: #4f46e5;
+  --auth-link-hover: #4338ca;
+  --auth-focus-ring: rgba(79, 70, 229, 0.1);
+  --auth-field-error: #dc2626;
+  --auth-field-error-bg: #fef2f2;
+  --auth-check-border: #d1d5db;
+  --auth-success-bg: #ecfdf5;
+  --auth-success-text: #065f46;
+  --auth-success-border: #6ee7b7;
+  --auth-error-bg: #fef2f2;
+  --auth-error-text: #dc2626;
+  --auth-error-border: #fca5a5;
+}
+
+body.dark-mode {
+  --auth-bg: #2b303b;
+  --auth-card-bg: #141a27;
+  --auth-card-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  --auth-title: #f9fafb;
+  --auth-text-muted: #9ca3af;
+  --auth-label: #d1d5db;
+  --auth-input-bg: #1f2737;
+  --auth-input-border: #374151;
+  --auth-input-text: #f9fafb;
+  --auth-input-disabled-bg: #252d3d;
+  --auth-placeholder: #8b95a7;
+  --auth-icon: #9ca3af;
+  --auth-icon-hover: #d1d5db;
+  --auth-link: #818cf8;
+  --auth-link-hover: #a5b4fc;
+  --auth-focus-ring: rgba(129, 140, 248, 0.25);
+  --auth-field-error: #f87171;
+  --auth-field-error-bg: #2d1515;
+  --auth-check-border: #4b5563;
+  --auth-success-bg: #052e16;
+  --auth-success-text: #6ee7b7;
+  --auth-success-border: #065f46;
+  --auth-error-bg: #2d1515;
+  --auth-error-text: #fca5a5;
+  --auth-error-border: #991b1b;
+
+  background-color: #1e1e1e; /* fundo do painel de notas */
+}

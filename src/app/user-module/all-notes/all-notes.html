@@ -1,0 +1,319 @@
+<div class="app-wrapper">
+
+  <!-- ── TOAST NOTIFICATION ── -->
+  <div class="toast"
+       [class.show]="toastMessage"
+       [class.success]="toastType === 'success'"
+       [class.error]="toastType === 'error'"
+       [class.warning]="toastType === 'warning'"
+       role="status" aria-live="polite">
+    {{ toastMessage }}
+  </div>
+
+  <!-- ── LAYOUT PRINCIPAL ── -->
+  <div class="notes-container">
+
+    <!-- Sidebar (só desktop) -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-container"></div>
+        <h1 class="app-title">Plume Notes</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <button class="nav-item" [class.active]="viewMode === 'list'" (click)="viewMode = 'list'">
+          <span class="nav-icon"><fa-icon [icon]="faHouse"></fa-icon></span>
+          Todas as notas
+          <span class="nav-arrow">›</span>
+        </button>
+        <button class="nav-item" [class.active]="viewMode === 'archived'" (click)="viewMode = 'archived'">
+          <span class="nav-icon"><fa-icon [icon]="faBox"></fa-icon></span>
+          Notas arquivadas
+        </button>
+      </nav>
+      <div class="tags-section">
+        <h3 class="tags-title">Tags</h3>
+        <div class="tags-list">
+          <button *ngFor="let tag of todasTags" class="tag-item"
+                  [class.active]="tagsFiltradas.includes(tag)" (click)="toggleTagFilter(tag)">
+            <span class="nav-icon">🏷️</span>{{ tag }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ÁREA PRINCIPAL ── -->
+    <div class="main-content">
+      <div class="notes-header">
+        <h2 class="section-title">{{ viewMode === 'archived' ? 'Notas arquivadas' : 'Todas as notas' }}</h2>
+        <div class="header-actions">
+          <input #campoBusca type="text" class="search-input"
+                 placeholder="Pesquisar por título, conteúdo ou tags..."
+                 [formControl]="termoBusca">
+          <button class="icon-button" (click)="ligarDesligarDarkMode()"
+                  [title]="theme.escuro() ? 'Mudar para o tema claro' : 'Mudar para o tema escuro'"
+                  [attr.aria-label]="theme.escuro() ? 'Mudar para o tema claro' : 'Mudar para o tema escuro'">
+            <fa-icon [icon]="theme.escuro() ? faSun : faMoon"></fa-icon>
+          </button>
+          <button class="icon-button" (click)="logout()"
+                  [title]="'Sair (' + nomeUsuario + ')'" aria-label="Sair">
+            <fa-icon [icon]="faRightFromBracket"></fa-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Tags no mobile/tablet (a sidebar só existe no desktop). Abre pelo botão "Tags" da barra inferior -->
+      <div class="mobile-tags" *ngIf="mobileTagsActive" role="group" aria-label="Filtrar por tags">
+        <button *ngFor="let tag of todasTags" type="button" class="tag-chip"
+                [class.active]="tagsFiltradas.includes(tag)" [attr.aria-pressed]="tagsFiltradas.includes(tag)"
+                (click)="toggleTagFilter(tag)">{{ tag }}</button>
+        <span class="mobile-tags-empty" *ngIf="todasTags.length === 0">Nenhuma tag ainda. Adicione tags ao criar uma nota.</span>
+      </div>
+
+      <!-- Botão criar — visível só no desktop -->
+      <button class="create-note-button" (click)="criarNovaNota()">+ Nova nota</button>
+
+      <!-- Lista de notas -->
+      <div class="notes-list" *ngIf="notasFiltradas.length > 0">
+        <div *ngFor="let note of notasFiltradas" class="note-card"
+             [class.selected]="notaSelecionada?.id === note.id"
+             (click)="onNoteClick(note)">
+
+          <!-- Banner do card: a imagem já foi recortada ao salvar; o frame só reserva a proporção dela -->
+          <div *ngIf="urlImagem(note) as url" class="note-card-banner-frame" [style.--ar]="note.imagem!.ar">
+            <img [src]="url" alt="" class="note-card-banner-img">
+          </div>
+
+          <div class="note-card-content">
+            <div class="note-card-header">
+              <div class="note-card-icon"></div>
+              <div class="note-card-info">
+                <h3 class="note-title">{{ note.titulo }}</h3>
+              </div>
+            </div>
+            <div class="note-tags">
+              <span *ngFor="let tag of note.tags" class="note-tag">{{ tag }}</span>
+            </div>
+            <p class="note-date">{{ formatarData(note.dataEdicao) }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="notasFiltradas.length === 0 && !modoCriacao">
+        <p *ngIf="temFiltroAtivo">Nenhuma nota encontrada. Tente outra pesquisa ou limpe os filtros de tags.</p>
+        <p *ngIf="!temFiltroAtivo && viewMode === 'archived'">As notas arquivadas ficam guardadas aqui. Você pode restaurá-las ou excluí-las quando quiser.</p>
+        <p *ngIf="!temFiltroAtivo && viewMode !== 'archived'">Você ainda não tem notas. Crie uma nova nota para registrar suas ideias.</p>
+      </div>
+    </div>
+
+    <!-- ── PAINEL DE DETALHES / EDIÇÃO ── -->
+    <div class="note-details" *ngIf="notaSelecionada || modoCriacao">
+
+      <!-- ── MODO VISUALIZAÇÃO ── -->
+      <ng-container *ngIf="!modoEdicao && !modoCriacao">
+
+        <!-- Botão voltar (só mobile/tablet) -->
+        <button class="btn-back" (click)="fecharDetalhe()">
+          ‹ Voltar
+        </button>
+
+        <div class="note-detail-actions">
+          <button class="action-icon-btn" (click)="entrarModoEdicao()" title="Editar nota" aria-label="Editar nota">
+            <fa-icon [icon]="faPenToSquare"></fa-icon>
+          </button>
+          <button class="action-icon-btn" (click)="arquivarNota()"
+                  [title]="notaSelecionada?.archived ? 'Restaurar nota' : 'Arquivar nota'"
+                  [attr.aria-label]="notaSelecionada?.archived ? 'Restaurar nota' : 'Arquivar nota'">
+            <fa-icon [icon]="faBox"></fa-icon>
+          </button>
+          <button class="action-icon-btn danger" (click)="deletarNota()" title="Excluir nota" aria-label="Excluir nota">
+            <fa-icon [icon]="faTrash"></fa-icon>
+          </button>
+        </div>
+
+        <div *ngIf="urlImagem(notaSelecionada) as url" class="note-detail-banner-frame"
+             [style.--ar]="notaSelecionada!.imagem!.ar">
+          <img [src]="url" [alt]="'Imagem da nota ' + notaSelecionada!.titulo" class="note-detail-banner-img">
+        </div>
+
+        <div class="note-detail-content">
+          <div class="note-detail-header">
+            <div class="note-detail-icon"></div>
+            <h2 class="note-detail-title">{{ notaSelecionada?.titulo }}</h2>
+          </div>
+          <div class="note-metadata">
+            <div class="metadata-item">
+              <span class="metadata-icon">🏷️</span>
+              <span class="metadata-label">Tags</span>
+              <div class="metadata-tags">
+                <span *ngFor="let tag of notaSelecionada?.tags" class="metadata-tag">{{ tag }}</span>
+              </div>
+            </div>
+            <div class="metadata-item">
+              <span class="metadata-icon">🕐</span>
+              <span class="metadata-label">Última edição</span>
+              <span class="metadata-value">{{ formatarData(notaSelecionada?.dataEdicao) }}</span>
+            </div>
+          </div>
+          <h3 class="content-title">Conteúdo:</h3>
+          <div class="note-content-text">{{ getDescricao() }}</div>
+        </div>
+      </ng-container>
+
+      <!-- ── MODO CRIAÇÃO / EDIÇÃO ── -->
+      <ng-container *ngIf="modoEdicao || modoCriacao">
+
+        <!-- Botão voltar (só mobile/tablet) -->
+        <button class="btn-back" (click)="cancelar()">
+          ‹ Voltar
+        </button>
+
+        <div class="note-detail-actions">
+          <button class="action-icon-btn" (click)="cancelar()" title="Cancelar" aria-label="Cancelar">✖️</button>
+        </div>
+
+        <div class="note-detail-content">
+          <h2 class="form-section-title">{{ modoCriacao ? 'Nova nota' : 'Editar nota' }}</h2>
+
+          <div class="form-group">
+            <label class="form-label">Título</label>
+            <input type="text" class="form-input" placeholder="Título da nota" [formControl]="tituloControl">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tags (separadas por vírgula)</label>
+            <input type="text" class="form-input" placeholder="Estudo, Projeto, Pessoal..." [formControl]="tagsControl">
+          </div>
+
+          <div class="form-group" *ngIf="!mostrarAnexoImagem">
+            <button type="button" class="btn-secondary" (click)="revelarAnexoImagem()">Anexar imagem</button>
+          </div>
+
+          <div class="form-group" *ngIf="mostrarAnexoImagem">
+            <label class="form-label">Imagem (opcional)</label>
+            <input #arquivoInput type="file" hidden
+                   accept="image/jpeg,image/png,image/webp,image/gif"
+                   (change)="onArquivoEscolhido($event)">
+
+            <!-- Imagem que a nota já tem -->
+            <ng-container *ngIf="imagemAtual && !removerImagemAtual && !arquivoParaRecorte">
+              <div *ngIf="urlImagem(notaSelecionada) as url" class="note-detail-banner-frame form-image-current"
+                   [style.--ar]="imagemAtual.ar">
+                <img [src]="url" alt="Imagem atual da nota" class="note-detail-banner-img">
+              </div>
+              <div class="image-actions">
+                <button type="button" class="btn-secondary" (click)="ajustarRecorte()">Ajustar recorte</button>
+                <button type="button" class="btn-secondary" (click)="arquivoInput.click()">Substituir imagem</button>
+                <button type="button" class="btn-secondary danger" (click)="removerImagem()">Remover imagem</button>
+              </div>
+            </ng-container>
+
+            <!-- Escolher uma imagem nova -->
+            <ng-container *ngIf="!arquivoParaRecorte && (!imagemAtual || removerImagemAtual)">
+              <p class="image-removed-note" *ngIf="removerImagemAtual">A imagem será removida ao salvar.</p>
+              <div class="image-actions">
+                <button type="button" class="btn-secondary" (click)="arquivoInput.click()">Escolher do computador</button>
+              </div>
+            </ng-container>
+
+            <div class="image-url-row" *ngIf="!arquivoParaRecorte">
+              <input type="text" class="form-input"
+                     placeholder="ou cole o endereço (URL) de uma imagem"
+                     [formControl]="imageUrlControl"
+                     (keydown.enter)="$event.preventDefault(); carregarDaUrl()">
+              <button type="button" class="btn-secondary" [disabled]="carregandoImagem" (click)="carregarDaUrl()">
+                {{ carregandoImagem ? 'Baixando...' : 'Carregar' }}
+              </button>
+            </div>
+
+            <p class="erro-imagem" role="alert" *ngIf="imagemErroMsg">{{ imagemErroMsg }}</p>
+            <a class="link-abrir-imagem" *ngIf="urlParaAbrir" [href]="urlParaAbrir" target="_blank" rel="noopener noreferrer">
+              Abrir a imagem em uma nova aba ↗
+            </a>
+
+            <!-- Recorte -->
+            <ng-container *ngIf="arquivoParaRecorte">
+              <div class="form-cropper-box">
+                <image-cropper
+                  [imageFile]="arquivoParaRecorte"
+                  [maintainAspectRatio]="false"
+                  format="jpeg"
+                  [imageQuality]="90"
+                  backgroundColor="#ffffff"
+                  [resizeToWidth]="1280"
+                  [onlyScaleDown]="true"
+                  [autoCrop]="true"
+                  (imageCropped)="onImageCropped($event)"
+                  (loadImageFailed)="onImagemFalhou()">
+                </image-cropper>
+              </div>
+
+              <div class="crop-preview-strip" *ngIf="previewRecorteUrl">
+                <span class="crop-preview-label">Pré-visualização:</span>
+                <div class="crop-preview-thumb" [style.--ar]="previewRecorteAr">
+                  <img [src]="previewRecorteUrl" alt="Pré-visualização do recorte">
+                </div>
+                <span class="crop-preview-ar">{{ previewRecorteAr | number:'1.2-2' }}:1</span>
+              </div>
+
+              <div class="image-actions">
+                <button type="button" class="btn-secondary" (click)="cancelarRecorte()">Cancelar imagem</button>
+              </div>
+            </ng-container>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Conteúdo</label>
+            <textarea class="form-textarea"
+                      placeholder="Escreva o conteúdo da sua nota aqui..."
+                      [formControl]="conteudoControl"
+                      rows="15"></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn-primary" [disabled]="salvando" (click)="salvarNota()">
+              {{ salvando ? 'Salvando...' : (modoCriacao ? 'Criar nota' : 'Salvar alterações') }}
+            </button>
+            <button class="btn-secondary" (click)="cancelar()">Cancelar</button>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+
+  </div><!-- /notes-container -->
+
+  <!-- ── FAB: criar nova nota (só mobile/tablet) ── -->
+  <button class="fab" *ngIf="!notaSelecionada && !modoCriacao" (click)="criarNovaNota()" title="Nova nota" aria-label="Nova nota">+</button>
+
+  <!-- ── BOTTOM NAVIGATION (só mobile/tablet) ── -->
+  <nav class="bottom-nav" role="navigation" aria-label="Navegação principal">
+    <button class="bottom-nav-item"
+            [class.active]="viewMode === 'list' && !notaSelecionada && !modoCriacao"
+            (click)="irParaLista()">
+      <fa-icon [icon]="faHouse"></fa-icon>
+      <span>Início</span>
+    </button>
+    <button class="bottom-nav-item"
+            [class.active]="mobileSearchActive"
+            (click)="toggleMobileSearch()">
+      <fa-icon [icon]="faMagnifyingGlass"></fa-icon>
+      <span>Pesquisar</span>
+    </button>
+    <button class="bottom-nav-item"
+            [class.active]="viewMode === 'archived'"
+            (click)="irParaArquivadas()">
+      <fa-icon [icon]="faBox"></fa-icon>
+      <span>Arquivadas</span>
+    </button>
+    <button class="bottom-nav-item"
+            [class.active]="mobileTagsActive"
+            (click)="toggleMobileTags()">
+      <span class="nav-icon-emoji">🏷️</span>
+      <span>Tags</span>
+    </button>
+    <button class="bottom-nav-item" (click)="ligarDesligarDarkMode()">
+      <fa-icon [icon]="theme.escuro() ? faSun : faMoon"></fa-icon>
+      <span>{{ theme.escuro() ? 'Claro' : 'Escuro' }}</span>
+    </button>
+  </nav>
+
+</div><!-- /app-wrapper -->
